@@ -1,15 +1,65 @@
 const express = require('express')
 const app = express()
- 
-// app.get('/:a/:b', function (req, res) {
-//   const {a , b} = req.params
-//   console.log(a , b)
-// })
+const bodyParser = require('body-parser')
+const { Word } = require('./wordmodel')
 
-app.get('/', function (req, res) {
-    const a = req.query.a
-    const b = req.query.b
-    console.log(a , b)
-})
+app.use(bodyParser.json())
  
-app.listen(3000)
+app.get("/word" , (req , res) => {
+    Word.find({})
+    .then(words => res.send({success : true , words}))
+    .catch(error => res.send({success : false , message : error}))
+})
+
+//insert 
+app.post("/word" , (req , res) => {
+    const {en , vn } = req.body
+    if(en.trim() === '' || vn.trim() === ''){
+        return res.send({success : false , message : "Emty value"})
+    }
+    const newword = new Word({en , vn})
+    newword.save()
+    .then(w => {
+        if(w){
+            res.send({success : true , word : w})
+        }else{
+            res.send({success : false , message : "Thêm thất bại"})
+        }
+    })
+    .catch(error => res.send({success : false , message : error}))
+})
+//update
+app.put("/word/:_id" , (req , res) => {
+    const {_id} = req.params
+    const {ismemorized} = req.body
+    if(_id.trim() === '' || ismemorized === null){
+        return res.send({success : false , message : "Emty value"})
+    }
+    Word.findByIdAndUpdate(_id,{ismemorized},{new : true})
+    .then(w => {
+        if(w){
+            res.send({success : true , word : w})
+        }else{
+            res.send({success : false , message : "Cập nhật thất bại"})
+        }
+    })
+    .catch(error => res.send({success : false , message : error}))
+})
+//delete
+app.delete("/word/:_id" , (req , res) => {
+    const {_id} = req.params
+    if(_id.trim() === ''){
+        return res.send({success : false , message : "Emty value"})
+    }
+    Word.findByIdAndDelete(_id)
+    .then(w => {
+        if(w){
+            res.send({success : true , word : w})
+        }else{
+            res.send({success : false , message : "Xoá thất bại"})
+        }
+    })
+    .catch(error => res.send({success : false , message : error}))
+})
+
+app.listen(process.env.PORT || '3000' ,() => console.log("Server started"))
